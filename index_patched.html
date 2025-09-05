@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Star Guardian</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: black;
+      color: white;
+      font-family: sans-serif;
+    }
+    canvas {
+      display: block;
+      margin: auto;
+      background: #000;
+      touch-action: none;
+      -webkit-user-select: none;
+    }
+    #startOverlay {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.85);
+      color: #fff; font-size: 24px;
+      z-index: 9999;
+    }
+    #mobileControls {
+      position: fixed; left:0; right:0; bottom: 16px;
+      display: flex; justify-content: space-between;
+      padding: 0 16px;
+      z-index: 9998;
+    }
+    #mobileControls button {
+      font-size: 22px;
+      padding: 14px 20px;
+      border: none;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+    }
+    html, body { overscroll-behavior: none; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.39/Tone.js"></script>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- 点击开始遮罩 -->
+  <div id="startOverlay">Tap to Start</div>
+
+  <!-- 移动端屏幕按钮 -->
+  <div id="mobileControls">
+    <div>
+      <button id="btnLeft">◀︎</button>
+      <button id="btnRight">▶︎</button>
+    </div>
+    <div>
+      <button id="btnFire">⎵ Fire</button>
+    </div>
+  </div>
+
+<script>
+// ============ 游戏逻辑入口 ============
+
+// 全局按键状态
+const keys = {};
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// 初始化音频
+function initializeAudio() {
+  console.log("Audio initialized");
+  // TODO: 在这里初始化 Tone.js 声音
+}
+
+// 游戏启动
+function startGame() {
+  console.log("Game started");
+  gameLoop();
+}
+
+// 游戏循环
+function gameLoop() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = "white";
+  ctx.font = "24px sans-serif";
+  ctx.fillText("Star Guardian Demo", 50, 50);
+
+  // TODO: 根据 keys 更新游戏对象
+
+  requestAnimationFrame(gameLoop);
+}
+
+// 键盘事件
+document.addEventListener('keydown', e => { keys[e.key] = true; });
+document.addEventListener('keyup', e => { keys[e.key] = false; });
+
+// 移动端按钮绑定
+function bindHoldButton(el, onPress, onRelease){
+  const press = e => { e.preventDefault(); onPress(); };
+  const release = e => { e.preventDefault(); onRelease(); };
+  el.addEventListener('pointerdown', press);
+  el.addEventListener('pointerup', release);
+  el.addEventListener('pointercancel', release);
+  el.addEventListener('pointerleave', release);
+  el.addEventListener('touchstart', press, {passive:false});
+  el.addEventListener('touchend', release);
+  el.addEventListener('mousedown', press);
+  el.addEventListener('mouseup', release);
+}
+
+bindHoldButton(document.getElementById('btnLeft'),
+  () => keys['ArrowLeft'] = true,
+  () => keys['ArrowLeft'] = false
+);
+bindHoldButton(document.getElementById('btnRight'),
+  () => keys['ArrowRight'] = true,
+  () => keys['ArrowRight'] = false
+);
+bindHoldButton(document.getElementById('btnFire'),
+  () => { keys[' '] = true; keys['Space'] = true; },
+  () => { keys[' '] = false; keys['Space'] = false; }
+);
+
+// iOS 音频解锁
+async function unlockAudioAndStart() {
+  try {
+    if (window.Tone && Tone.context && Tone.context.state !== 'running') {
+      await Tone.start();
+      await Tone.context.resume?.();
+    }
+  } catch (e) { console.warn('Tone start failed:', e); }
+  if (typeof initializeAudio === 'function') initializeAudio();
+  if (typeof startGame === 'function') startGame();
+  document.getElementById('startOverlay')?.remove();
+}
+['pointerdown','click','touchend'].forEach(ev =>
+  document.getElementById('startOverlay')
+    .addEventListener(ev, unlockAudioAndStart, { once:true })
+);
+</script>
+</body>
+</html>
